@@ -1,19 +1,23 @@
+import chalk from "chalk";
+
 export type Board<T> = [T, T, T, T, T, T, T, T, T];
 export type Player = "X" | "O";
 export type Move = Player | " ";
 export type Position = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
 export type Play = [Player, Position];
+
 type Winner = [Player, Combo];
 type Combo = [number, number, number];
+type RawBoard = Board<string>;
 
 export type Game = {
   board: Board<Move>;
-  plays: Play[];
+  movesPlayed: number;
 };
 
 export const createGame = (): Game => ({
-  board: [" ", " ", " ", " ", " ", " ", " ", " ", " "],
-  plays: [],
+  board: blankBoard,
+  movesPlayed: 0,
 });
 
 export const availablePositions = (game: Game): Position[] =>
@@ -25,7 +29,7 @@ export const availablePositions = (game: Game): Position[] =>
   }, [] as Position[]);
 
 export const nextPlayer = (game: Game): Player =>
-  game.plays.length % 2 === 0 ? "X" : "O";
+  game.movesPlayed % 2 === 0 ? "X" : "O";
 
 export const printGameProgress = (game: Game): string => {
   const board: RawBoard = game.board.map((move, index) => {
@@ -37,7 +41,7 @@ export const printGameProgress = (game: Game): string => {
 export const printWinningCombo = ([player, combo]: Winner): string => {
   const board = blankBoard.map((_, index) =>
     combo.includes(index) ? player : " "
-  ) as Board<string>;
+  ) as RawBoard;
   return printBoard(board);
 };
 
@@ -46,31 +50,31 @@ export const playMove = (game: Game, play: Play): Game => {
   const board = game.board.map((value, index) =>
     index + 1 === position ? player : value
   ) as Board<Move>;
-  const plays = [...game.plays, play];
-  return { board, plays };
+  return { board, movesPlayed: game.movesPlayed + 1 };
 };
 
-type RawBoard = [
-  string,
-  string,
-  string,
-  string,
-  string,
-  string,
-  string,
-  string,
-  string
-];
+const printBoard = (board: RawBoard): string => {
+  const c = cell(board);
+  return `
 
-const printBoard = ([_1, _2, _3, _4, _5, _6, _7, _8, _9]: RawBoard): string => `
-
-  ${_1} │ ${_2} │ ${_3}  
+  ${c(1)} │ ${c(2)} │ ${c(3)}  
  ───┼───┼───
-  ${_4} │ ${_5} │ ${_6}  
+  ${c(4)} │ ${c(5)} │ ${c(6)}  
  ───┼───┼───
-  ${_7} │ ${_8} │ ${_9}
+  ${c(7)} │ ${c(8)} │ ${c(9)}
 
 `;
+};
+
+const isPlayer = (candidate: string): candidate is Player =>
+  candidate === "X" || candidate === "O";
+
+const cell =
+  (board: RawBoard) =>
+  (position: Position): string => {
+    const value = board[position - 1] ?? " ";
+    return isPlayer(value) ? value : chalk.grey(value);
+  };
 
 const blankBoard: Board<" "> = [" ", " ", " ", " ", " ", " ", " ", " ", " "];
 
@@ -100,5 +104,6 @@ export const findWinner = (game: Game): [Player, Combo] | null => {
       return [player, combo];
     }
   }
+
   return null;
 };
